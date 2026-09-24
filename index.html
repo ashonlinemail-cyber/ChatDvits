@@ -6,83 +6,83 @@
     <title>ChatDvits AI</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #0b1120; }
-        .chat-container { max-width: 800px; margin: 0 auto; height: 100vh; display: flex; flex-direction: column; }
-        .message-box { flex-grow: 1; overflow-y: auto; padding: 20px; }
-        .user-msg { background-color: #3b82f6; color: white; padding: 10px 15px; border-radius: 15px 15px 0 15px; align-self: flex-end; max-width: 80%; }
-        .ai-msg { background-color: #1f2937; color: #e5e7eb; padding: 10px 15px; border-radius: 15px 15px 15px 0; align-self: flex-start; max-width: 80%; }
+        body { background-color: #0f172a; font-family: sans-serif; }
+        .chat-container { max-width: 900px; margin: 0 auto; height: 100vh; display: flex; flex-direction: column; }
+        .message-box { flex-grow: 1; overflow-y: auto; padding: 20px; scroll-behavior: smooth; }
+        .user-msg { background-color: #2563eb; color: white; padding: 12px 16px; border-radius: 18px 18px 0 18px; align-self: flex-end; max-width: 80%; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .ai-msg { background-color: #1e293b; color: #f1f5f9; padding: 12px 16px; border-radius: 18px 18px 18px 0; align-self: flex-start; max-width: 80%; border: 1px solid #334155; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
     </style>
 </head>
-<body class="text-white">
+<body class="text-slate-200">
 
     <div class="chat-container">
-        <!-- Header -->
-        <header class="p-6 text-center border-b border-gray-700">
-            <h1 class="text-2xl font-bold text-blue-400">ChatDvits</h1>
-            <p class="text-xs text-gray-500">Powered by Free AI</p>
+        <header class="p-5 text-center border-b border-slate-800 bg-slate-900/50 backdrop-blur">
+            <h1 class="text-3xl font-black tracking-tight text-blue-500">ChatDvits</h1>
+            <p class="text-xs text-slate-500 uppercase tracking-widest mt-1">Intelligent Companion</p>
         </header>
 
-        <!-- Messages Area -->
-        <div id="chat-box" class="message-box flex flex-col space-y-4">
-            <div class="ai-msg shadow-lg">Hello! I am ChatDvits. I am now live on your GitHub! How can I help you today?</div>
+        <div id="chat-box" class="message-box flex flex-col space-y-6">
+            <div class="ai-msg">Hello! I am ChatDvits. Your setup is complete. How can I help you today?</div>
         </div>
 
-        <!-- Input Bar -->
-        <div class="p-4 bg-gray-900 border-t border-gray-800">
-            <div class="flex gap-2 max-w-4xl mx-auto">
-                <input id="user-input" type="text" placeholder="Send a message..." 
-                    class="w-full p-3 rounded-lg bg-gray-800 border border-gray-700 focus:outline-none focus:border-blue-500">
-                <button onclick="sendMsg()" class="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-lg font-bold transition">Send</button>
+        <div class="p-6 bg-slate-900 border-t border-slate-800">
+            <div class="flex gap-3 max-w-4xl mx-auto">
+                <input id="user-input" type="text" placeholder="Type your message..." 
+                    class="w-full p-4 rounded-xl bg-slate-800 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-white">
+                <button onclick="sendMsg()" class="bg-blue-600 hover:bg-blue-500 px-8 py-4 rounded-xl font-bold shadow-lg shadow-blue-900/20 transition-all">Send</button>
             </div>
         </div>
     </div>
 
     <script>
+        // STEP: PASTE YOUR GSK_ KEY BETWEEN THE QUOTES BELOW
+        const MY_GROQ_KEY = "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"; 
+
         async function sendMsg() {
             const input = document.getElementById('user-input');
             const chatBox = document.getElementById('chat-box');
             const text = input.value.trim();
-            
             if (!text) return;
 
-            // Display User Message
-            chatBox.innerHTML += `<div class="user-msg shadow-md">${text}</div>`;
+            chatBox.innerHTML += `<div class="user-msg">${text}</div>`;
             input.value = '';
             chatBox.scrollTop = chatBox.scrollHeight;
 
-            // Display Loading State
             const loadingDiv = document.createElement('div');
-            loadingDiv.className = 'ai-msg text-gray-400';
+            loadingDiv.className = 'ai-msg';
             loadingDiv.innerText = 'ChatDvits is thinking...';
             chatBox.appendChild(loadingDiv);
 
             try {
-                // Using a 100% Free API (No Key Required for small tests)
-                const response = await fetch("https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-beta", {
+                const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ inputs: `User: ${text}\nAssistant:` })
+                    headers: { 
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${MY_GROQ_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: "llama3-8b-8192",
+                        messages: [
+                            { role: "system", content: "You are ChatDvits — a friendly, intelligent companion." },
+                            { role: "user", content: text }
+                        ]
+                    })
                 });
                 
-                const result = await response.json();
+                const data = await response.json();
                 loadingDiv.remove();
+                const aiReply = data.choices[0].message.content;
 
-                let reply = "I'm sorry, I'm having trouble connecting right now.";
-                if (result && result[0] && result[0].generated_text) {
-                    reply = result[0].generated_text.split("Assistant:").pop().trim();
-                }
-
-                chatBox.innerHTML += `<div class="ai-msg shadow-lg">${reply}</div>`;
+                chatBox.innerHTML += `<div class="ai-msg">${aiReply}</div>`;
                 chatBox.scrollTop = chatBox.scrollHeight;
             } catch (err) {
-                loadingDiv.innerText = "Error: The free AI server is busy. Try again in a moment!";
+                loadingDiv.innerText = "Error: Please check your API key!";
             }
         }
 
-        // Allow "Enter" key to send
-        document.getElementById('user-input').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') sendMsg();
-        });
+        document.getElementById('user-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMsg(); });
     </script>
 </body>
 </html>
